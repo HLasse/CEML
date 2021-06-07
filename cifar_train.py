@@ -14,7 +14,9 @@ from utils import get_mean_and_std, set_seeds
 
 import numpy as np
 
-## Based on https://github.com/kuangliu/pytorch-cifar and various pytorch tutorials
+## Based on https://github.com/kuangliu/pytorch-cifar,
+#  https://colab.research.google.com/github/wandb/examples/blob/master/colabs/pytorch/Simple_PyTorch_Integration.ipynb,
+# and various pytorch tutorials
 
 
 ########################
@@ -42,49 +44,11 @@ import numpy as np
 # Load datasets and transform
 ########################
 
-print("[INFO] Loading and preparing data...")
-
 img_means = (0.4914, 0.4822, 0.4465)
 img_stds = (0.2023, 0.1994, 0.2010)
 
 BATCH_SIZE = 128
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-
-
-transform_train = transforms.Compose(
-    [
-        # Images are 32x32, so desired output size is 32
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        # Normalizing with the previously calculated mean and stds
-        transforms.Normalize(img_means, img_stds),
-    ]
-)
-
-# Not augmenting the test set but performing normalization with the same values
-transform_test = transforms.Compose(
-    [
-        transforms.ToTensor(),
-        transforms.Normalize(img_means, img_stds),
-    ]
-)
-
-
-trainset = torchvision.datasets.CIFAR10(
-    root="data", train=True, download=True, transform=transform_train
-)
-
-train_loader = torch.utils.data.DataLoader(
-    trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2
-)
-
-testset = torchvision.datasets.CIFAR10(
-    root="data", train=False, download=True, transform=transform_test
-)
-test_loader = torch.utils.data.DataLoader(
-    testset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2
-)
 
 classes = (
     "plane",
@@ -198,16 +162,47 @@ def test(args, model, device, test_loader, criterion, classes):
         )
 
 
-######################
-## Prepare to train
-##
-#####################
-
-# https://colab.research.google.com/drive/1XDtq-KT0GkX06a_g1MevuLFOMk4TxjKZ#scrollTo=axH9Vd7igjO3
 
 
 def main():
     set_seeds(42)
+
+    print("[INFO] Loading and preparing data...")
+
+
+    transform_train = transforms.Compose(
+        [
+            # Images are 32x32, so desired output size is 32
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            # Normalizing with the previously calculated mean and stds
+            transforms.Normalize(img_means, img_stds),
+        ]
+    )
+
+    # Not augmenting the test set but performing normalization with the same values
+    transform_test = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize(img_means, img_stds),
+        ]
+    )
+
+    trainset = torchvision.datasets.CIFAR10(
+        root="data", train=True, download=True, transform=transform_train
+    )
+
+    train_loader = torch.utils.data.DataLoader(
+        trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2
+    )
+
+    testset = torchvision.datasets.CIFAR10(
+        root="data", train=False, download=True, transform=transform_test
+    )
+    test_loader = torch.utils.data.DataLoader(
+        testset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2
+    )
 
     model = Net().to(device)
     optimizer = optim.SGD(
@@ -220,6 +215,8 @@ def main():
     criterion = nn.CrossEntropyLoss()
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
+    print("[INFO] Training...")
+
     wandb.watch(model, log="all")
 
     for epoch in range(1, config.epochs + 1):
@@ -231,6 +228,7 @@ def main():
     torch.save(model.state_dict(), "model.h5")
     wandb.save("model.h5")
 
+    print("INFO] Done!")
 
 if __name__ == "__main__":
     wandb.init(project="ceml", entity="hlasse")
