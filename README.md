@@ -1,5 +1,5 @@
 # CEML
-Resources for course on Constructive and Explainable Machine Learning.
+Resources for exan in the course on Constructive and Explainable Machine Learning.
 
 The Task was to train a CNN on CIFAR-10 and explore which insights could be gathered from gradient-based pixel attributions models (using [Captum](https://captum.ai)) and nearest neighbors. 
 
